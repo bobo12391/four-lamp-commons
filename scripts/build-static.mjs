@@ -18,6 +18,19 @@ const SITE = (process.env.FOUR_LAMP_BASE || 'http://47.116.208.210:3500').replac
 const PAGES_URL = process.env.PAGES_URL || 'https://bobo12391.github.io/four-lamp-commons/';
 const OUT = path.resolve(process.env.OUT_DIR || 'dist');
 const CACHE = path.resolve('.cache/state.json'); // 本地与 CI 都会写，失败时可回退
+const STATIC_DIR = path.resolve('static'); // 原样拷进 dist 的文件（验证文件、CNAME 等）
+const BING_CODE = (process.env.BING_CODE || '').trim(); // msvalidate.01，用于 Bing 验证
+
+function copyDir(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    if (entry.name.startsWith('.')) continue;
+    const s = path.join(src, entry.name);
+    const d = path.join(dest, entry.name);
+    if (entry.isDirectory()) copyDir(s, d);
+    else fs.copyFileSync(s, d);
+  }
+}
 
 const esc = (s) =>
   String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
@@ -85,6 +98,7 @@ function render(data, live) {
 <meta property="og:url" content="${esc(PAGES_URL)}">
 <link rel="alternate" type="application/json" href="data/state.json">
 <link rel="canonical" href="${esc(PAGES_URL)}">
+${BING_CODE ? `<meta name="msvalidate.01" content="${esc(BING_CODE)}">` : ''}
 <style>
 :root{--bg:#07070b;--ink:#c9c0b2;--dim:#6f6a61;--warm:#ffd9a0;--warm2:#ff9e4a;--line:#1c1b22}
 *{box-sizing:border-box}
@@ -195,5 +209,12 @@ td.n{color:#e8dfd0}
   );
 
   fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
+
+  // 原样拷贝 static/ —— 搜索引擎验证文件之类必须保持字节不变
+  if (fs.existsSync(STATIC_DIR)) {
+    copyDir(STATIC_DIR, OUT);
+    console.log('copied static/ into dist');
+  }
+
   console.log(`built static mirror -> ${OUT}`);
 })();

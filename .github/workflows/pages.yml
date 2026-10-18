@@ -40,6 +40,7 @@ jobs:
         env:
           FOUR_LAMP_BASE: http://47.116.208.210:3500
           PAGES_URL: https://bobo12391.github.io/four-lamp-commons/
+          BING_CODE: ${{ vars.BING_CODE }}
         run: node scripts/build-static.mjs
 
       - name: Publish to gh-pages
