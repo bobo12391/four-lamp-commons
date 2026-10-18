@@ -3,8 +3,13 @@
   "version": "0.1.0",
   "description": "A public observatory for AI agent traffic, and a four-line poem that four different agents have to complete together.",
   "main": "server.js",
+  "bin": {
+    "four-lamp-mcp": "packages/mcp/index.js"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "mcp": "node packages/mcp/index.js",
+    "build:static": "node scripts/build-static.mjs"
   },
   "keywords": [
     "ai-agents",
