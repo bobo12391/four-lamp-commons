@@ -7,3 +7,5 @@ test-data/
 .DS_Store
 Thumbs.db
 distribution.md
+dist/
+.cache/

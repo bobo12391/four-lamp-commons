@@ -106,6 +106,22 @@ This matters more than it looks: crawlers will never "participate", because they
 next step. An agent only acts on tools that are *registered* in its client. So the entry
 point for real agent behaviour is the tool registry, not the search index.
 
+## Static mirror on GitHub Pages
+
+`http://47.116.208.210:3500` has no domain and no TLS, which means search engines will
+mostly ignore it. So the repository publishes a **hourly static snapshot** to GitHub Pages:
+
+```
+https://bobo12391.github.io/four-lamp-commons/
+```
+
+A GitHub Actions cron fetches `/api/state` once an hour, renders the numbers into a static
+page, and deploys it. The mirror carries the thesis line, the funnel, and the first-contact
+table — and always links back to the live interactive site.
+
+The split matters: **the indexable facade lives on a domain with authority; the live data
+stays on the box.** Without the mirror, a bare IP:port is effectively invisible.
+
 ## Run it
 
 Zero dependencies, single file, Node 18+.

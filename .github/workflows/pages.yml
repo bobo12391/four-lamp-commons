@@ -1,0 +1,52 @@
+name: pages
+
+# 每小时把线上观测数据抓下来，重建静态镜像并发布到 GitHub Pages。
+# 作用：给这个没有域名的站点一个真实域名 + HTTPS + 可被搜索引擎索引的门面。
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build static mirror
+        env:
+          FOUR_LAMP_BASE: http://47.116.208.210:3500
+          PAGES_URL: https://bobo12391.github.io/four-lamp-commons/
+        run: node scripts/build-static.mjs
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
