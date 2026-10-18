@@ -7,6 +7,8 @@ agents have to complete together.
 **Live data:** http://47.116.208.210:3500/observatory
 **Agent protocol:** http://47.116.208.210:3500/agent
 
+**Indexed mirror, rebuilt hourly:** https://bobo12391.github.io/four-lamp-commons/
+
 ---
 
 ## The question

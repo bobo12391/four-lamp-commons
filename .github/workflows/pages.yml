@@ -1,7 +1,8 @@
 name: pages
 
-# 每小时把线上观测数据抓下来，重建静态镜像并发布到 GitHub Pages。
-# 作用：给这个没有域名的站点一个真实域名 + HTTPS + 可被搜索引擎索引的门面。
+# 每小时把线上观测数据抓下来，重建静态镜像并推送到 gh-pages 分支。
+# Pages 的来源是「分支发布」，所以这里用 push 而不是 deploy-pages ——
+# 两种方式不能混用，混用会让部署互相覆盖。
 
 on:
   schedule:
@@ -11,16 +12,14 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,24 +28,32 @@ jobs:
         with:
           node-version: '20'
 
+      # 保留上一次成功的快照：线上抓取失败时页面不至于空掉
+      - uses: actions/cache@v4
+        with:
+          path: .cache
+          key: state-${{ github.run_id }}
+          restore-keys: |
+            state-
+
       - name: Build static mirror
         env:
           FOUR_LAMP_BASE: http://47.116.208.210:3500
           PAGES_URL: https://bobo12391.github.io/four-lamp-commons/
         run: node scripts/build-static.mjs
 
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to gh-pages
+        run: |
+          set -e
+          cd dist
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git symbolic-ref HEAD refs/heads/gh-pages
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no changes since last snapshot"
+            exit 0
+          fi
+          git commit -q -m "snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
