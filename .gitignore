@@ -6,3 +6,4 @@ test-data/
 *.log
 .DS_Store
 Thumbs.db
+distribution.md
