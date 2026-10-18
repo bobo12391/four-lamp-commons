@@ -130,6 +130,9 @@ const TOOLS = [
 function classify(ua) {
   const s = String(ua || '').toLowerCase();
   if (!s) return 'other';
+  // 自家流量必须单独标记：镜像构建、自检脚本、健康检查。
+  // 混进 other 会让 Azure 网段的构建请求看起来像外部访客，污染实验。
+  if (s.includes('four-lamp-mirror') || s.includes('four-lamp-commons')) return 'self';
   if (LIVE_AGENTS.some((k) => s.includes(k))) return 'agent';
   if (CRAWLERS.some((k) => s.includes(k))) return 'crawler';
   if (s.includes('headless') || TOOLS.some((k) => s.includes(k))) return 'agent';
@@ -428,6 +431,7 @@ function observatoryPage(summary) {
 ${bar(cls('crawler'), 'crawler')}
 ${bar(cls('agent'), 'agent')}
 ${bar(cls('human'), 'human')}
+${bar(cls('self'), 'self · 自家流量（镜像构建 / 自检）')}
 ${bar(cls('other'), 'other')}
 
 <h2>漏斗 · 从到达到动手</h2>
@@ -557,7 +561,7 @@ ${urls.map((u) => `  <url><loc>${BASE}${u}</loc><lastmod>${now}</lastmod><change
 
 const recentRequests = [];   // 内存里最近若干条，供看板
 const firstSeen = {};        // cls -> 时间字符串
-const classCount = { crawler: 0, agent: 0, human: 0, other: 0 };
+const classCount = { crawler: 0, agent: 0, human: 0, self: 0, other: 0 };
 let totalRequests = 0;
 const pathHits = new Map();
 
@@ -626,7 +630,7 @@ function dailyStats() {
     let r;
     try { r = JSON.parse(line); } catch (_) { continue; } // 起始行可能被截断
     const d = new Date(r.t).toISOString().slice(0, 10);
-    if (!days[d]) days[d] = { date: d, total: 0, crawler: 0, agent: 0, human: 0, other: 0 };
+    if (!days[d]) days[d] = { date: d, total: 0, crawler: 0, agent: 0, human: 0, self: 0, other: 0 };
     days[d].total++;
     if (days[d][r.cls] !== undefined) days[d][r.cls]++;
     else days[d].other++;
@@ -872,7 +876,7 @@ function dataPage() {
 
   const dayRows = days.map((d) => `
     <tr><td>${esc(d.date)}</td><td class="n">${d.total}</td><td>${d.crawler || 0}</td>
-    <td>${d.agent || 0}</td><td>${d.human || 0}</td><td>${d.other || 0}</td></tr>`).join('')
+    <td>${d.agent || 0}</td><td>${d.human || 0}</td><td>${d.self || 0}</td><td>${d.other || 0}</td></tr>`).join('')
     || '<tr><td colspan="6" style="color:#4c4841">尚无数据</td></tr>';
 
   const funnelRows = s.funnel.map((f) =>
@@ -896,7 +900,7 @@ function dataPage() {
 </div>
 
 <h2>按天</h2>
-<table><tr><th>日期</th><th>合计</th><th>爬虫</th><th>agent</th><th>人类</th><th>其他</th></tr>${dayRows}</table>
+<table><tr><th>日期</th><th>合计</th><th>爬虫</th><th>agent</th><th>人类</th><th>自家</th><th>其他</th></tr>${dayRows}</table>
 
 <h2>漏斗：从到达到动手</h2>
 <table><tr><th>阶段</th><th>次数</th><th>说明</th></tr>${funnelRows}</table>
@@ -921,6 +925,8 @@ function dataPage() {
 <h2>原始数据</h2>
 <p>每个请求一行 JSON：<a href="/api/state">/api/state</a> · 全量日志留在服务器磁盘，
 公开页面只显示脱敏 IP（<code>a.b.c.*</code>）。</p>
+<p style="color:#6f6a61;font-size:13px">注：2026-10-18 22:40 之前，本站自身的镜像构建与自检请求尚未单独标记，
+被计入「其他」。此后的数据已区分「自家」。原始日志不做改写。</p>
 <p style="color:#6f6a61;font-size:13px"><a href="/en">English</a> · <a href="/">中文</a> · <a href="/observatory">实时看板</a> · <a href="/bots">爬虫对照表</a></p>
 `;
 

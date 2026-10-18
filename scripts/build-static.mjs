@@ -37,9 +37,14 @@ const esc = (s) =>
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
 
+const SELF_UA = 'four-lamp-mirror/1.0 (+https://github.com/bobo12391/four-lamp-commons)';
+
 async function fetchPage(pathname) {
   try {
-    const res = await fetch(SITE + pathname, { signal: AbortSignal.timeout(15000) });
+    const res = await fetch(SITE + pathname, {
+      headers: { 'User-Agent': SELF_UA },
+      signal: AbortSignal.timeout(15000),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.text();
   } catch (err) {
@@ -67,7 +72,10 @@ const EXTRA_PAGES = [
 
 async function fetchState() {
   try {
-    const res = await fetch(`${SITE}/api/state`, { signal: AbortSignal.timeout(15000) });
+    const res = await fetch(`${SITE}/api/state`, {
+      headers: { 'User-Agent': SELF_UA },
+      signal: AbortSignal.timeout(15000),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     fs.mkdirSync(path.dirname(CACHE), { recursive: true });
