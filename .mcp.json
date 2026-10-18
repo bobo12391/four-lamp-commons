@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "four-lamp": {
+      "command": "node",
+      "args": ["packages/mcp/index.js"]
+    }
+  }
+}

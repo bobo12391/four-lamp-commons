@@ -37,6 +37,34 @@ const esc = (s) =>
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
 
+async function fetchPage(pathname) {
+  try {
+    const res = await fetch(SITE + pathname, { signal: AbortSignal.timeout(15000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  } catch (err) {
+    console.warn(`page ${pathname} failed: ${err.message}`);
+    return null;
+  }
+}
+
+/**
+ * 把线上页面搬成静态页。内部链接全部改写成指向实时站点 ——
+ * 镜像只做"门面"和"入口"，不制造重复的站内页面（那会被判成重复内容）。
+ */
+function rewriteLinks(html, pageUrl) {
+  return html
+    .replace(/href="\/(?!\/)/g, `href="${SITE}/`)
+    .replace(/src="\/(?!\/)/g, `src="${SITE}/`)
+    .replace('</head>', `<link rel="canonical" href="${pageUrl}">\n</head>`);
+}
+
+const EXTRA_PAGES = [
+  { path: '/en', out: 'en/index.html', url: `${PAGES_URL}en/` },
+  { path: '/data', out: 'dataset/index.html', url: `${PAGES_URL}dataset/` },
+  { path: '/bots', out: 'bots/index.html', url: `${PAGES_URL}bots/` },
+];
+
 async function fetchState() {
   try {
     const res = await fetch(`${SITE}/api/state`, { signal: AbortSignal.timeout(15000) });
@@ -204,9 +232,20 @@ td.n{color:#e8dfd0}
     `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>${PAGES_URL}</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>
+${EXTRA_PAGES.map((p) => `  <url><loc>${p.url}</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>`).join('\n')}
 </urlset>
 `
   );
+
+  // 把英文页 / 数据页 / 爬虫对照表也搬成静态页，一起进索引
+  for (const p of EXTRA_PAGES) {
+    const html = await fetchPage(p.path);
+    if (!html) continue;
+    const dest = path.join(OUT, p.out);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, rewriteLinks(html, p.url));
+    console.log(`mirrored ${p.path} -> ${p.out}`);
+  }
 
   fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
 
