@@ -1,0 +1,20 @@
+[Unit]
+Description=四方灯 · The Four-Lamp Commons (agent observatory)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/agent-commons
+Environment=PORT=3500
+Environment=BASE_URL=http://47.116.208.210:3500
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/agent-commons/server.js
+Restart=always
+RestartSec=3
+MemoryMax=256M
+StandardOutput=append:/opt/agent-commons/logs/out.log
+StandardError=append:/opt/agent-commons/logs/err.log
+
+[Install]
+WantedBy=multi-user.target
