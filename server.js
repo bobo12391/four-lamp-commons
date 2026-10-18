@@ -24,6 +24,7 @@ const BASE = (process.env.BASE_URL || `http://47.116.208.210:${PORT}`).replace(/
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const INDEXNOW_KEY = process.env.INDEXNOW_KEY || '';
 const STAMP_SECRET = process.env.STAMP_SECRET || 'four-lamp-commons-v1';
+const MIRROR = (process.env.PAGES_URL || 'https://bobo12391.github.io/four-lamp-commons/').replace(/\/+$/, '/');
 const STARTED = Date.now();
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -247,7 +248,7 @@ function page(title, desc, body, extraHead) {
 <style>${CSS}</style>
 ${extraHead || ''}
 </head><body><div class="wrap">${body}
-<div class="foot">四方灯 · ${esc(BASE)} · 匿名记录全部公开</div>
+<div class="foot">四方灯 · ${esc(BASE)} · 匿名记录全部公开 · <a href="${esc(MIRROR)}">镜像</a></div>
 </div></body></html>`;
 }
 
@@ -908,6 +909,15 @@ function dataPage() {
 <p>分类依据是 User-Agent 与请求头，因此它是<strong>软证据</strong>：UA 可以伪装。我们不用它下结论，
 只用它标记趋势。<a href="/bots">完整的 UA 对照表在这里</a>。</p>
 
+<h2>常见问题</h2>
+<h3 style="font-size:15px;color:#e8dfd0;font-weight:400;margin:22px 0 6px">一个新站上线后会收到多少 AI 访问？</h3>
+<p>自 ${new Date(STARTED).toISOString().slice(0, 10)} 起，本站共收到 ${s.total} 次请求：爬虫 ${s.byClass.crawler || 0} 次、agent ${s.byClass.agent || 0} 次、人类 ${s.byClass.human || 0} 次。</p>
+<h3 style="font-size:15px;color:#e8dfd0;font-weight:400;margin:22px 0 6px">其中有多少 AI 真的调用了接口？</h3>
+<p>${state.joins} 位到访者发起了 <code>POST /api/join</code>，${Object.keys(state.revealed).length} 句诗被补齐。
+调用接口才算"动手"，仅被抓取不算。</p>
+<h3 style="font-size:15px;color:#e8dfd0;font-weight:400;margin:22px 0 6px">这些数字可信吗？</h3>
+<p>分类依据是 User-Agent 与请求头，属于软证据，UA 可以伪造。本站只把它当趋势，不当结论。</p>
+
 <h2>原始数据</h2>
 <p>每个请求一行 JSON：<a href="/api/state">/api/state</a> · 全量日志留在服务器磁盘，
 公开页面只显示脱敏 IP（<code>a.b.c.*</code>）。</p>
@@ -921,7 +931,18 @@ function dataPage() {
 "license":"https://opensource.org/licenses/MIT","temporalCoverage":"${new Date(STARTED).toISOString().slice(0, 10)}/.."}
 </script>`;
 
-  return page('数据 · 四方灯', '四方灯的全部观测结果：AI 爬虫、agent、人类的到访统计，按天公开。', body, ld);
+  const dataFaq = `<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"一个新站上线后会收到多少 AI 访问？","acceptedAnswer":{"@type":"Answer","text":${JSON.stringify(
+    `自 ${new Date(STARTED).toISOString().slice(0, 10)} 起，本站共收到 ${s.total} 次请求：爬虫 ${s.byClass.crawler || 0} 次、agent ${s.byClass.agent || 0} 次、人类 ${s.byClass.human || 0} 次。`
+  )}}},
+{"@type":"Question","name":"其中有多少 AI 真的调用了接口？","acceptedAnswer":{"@type":"Answer","text":${JSON.stringify(
+    `${state.joins} 位到访者发起了 POST /api/join，${on} 句诗被补齐。调用接口才算"动手"，仅被抓取不算。`
+  )}}}
+]}
+</script>`;
+
+  return page('数据 · 四方灯', '四方灯的全部观测结果：AI 爬虫、agent、人类的到访统计，按天公开。', body, ld + dataFaq);
 }
 
 function botsPage() {
@@ -948,6 +969,35 @@ function botsPage() {
   const table = rows.map((r) =>
     `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td><code>${esc(r[3])}</code></td><td>${esc(r[4])}</td></tr>`).join('');
 
+  const faq = [
+    {
+      q: 'GPTBot 的 User-Agent 是什么？',
+      a: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; GPTBot/1.2; +https://openai.com/gptbot)。它用于训练抓取，不产生任何页面动作。',
+    },
+    {
+      q: 'ChatGPT 会在用户提问时实时抓取网页吗？',
+      a: '会。ChatGPT-User 这类请求由用户提问触发，模型为回答问题当场取页；它只会落在已经进入索引的页面上。',
+    },
+    {
+      q: '爬虫和 agent 的区别是什么？',
+      a: '爬虫离线取走内容建索引，没有下一步；agent 能在会话中调用工具接口，可以真的提交表单、留言、改变页面状态。前者产生流量，后者产生行为。',
+    },
+    {
+      q: '一个没有域名的新站点，能等到 AI 爬虫吗？',
+      a: '很难。爬虫发现新站只有三条路：被已抓取的页面外链、验证所有权后提交 sitemap、进入爬虫运营方的种子列表。内容质量不在这三条里。',
+    },
+  ];
+
+  const faqHtml = faq.map((f) =>
+    `<h3 style="font-size:15px;color:#e8dfd0;font-weight:400;margin:26px 0 6px">${esc(f.q)}</h3><p>${esc(f.a)}</p>`
+  ).join('');
+
+  const faqLd = `<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+${faq.map((f) => `{"@type":"Question","name":${JSON.stringify(f.q)},"acceptedAnswer":{"@type":"Answer","text":${JSON.stringify(f.a)}}}`).join(',\n')}
+]}
+</script>`;
+
   const body = `
 <h1 style="font-size:26px">AI 爬虫与 agent 对照表</h1>
 <p class="lede">谁在抓取网页，谁在用户提问时才来，谁有"下一步"</p>
@@ -972,6 +1022,9 @@ ${table}
 <p>分类依据是 UA 与请求头，属于软证据 —— UA 可以伪造，云厂商的抓取也常共用出口 IP。
 本站不用它下绝对结论，只用它标记趋势。</p>
 
+<h2>常见问题</h2>
+${faqHtml}
+
 <h2>给想被 AI 找到的站点</h2>
 <p>三条不依赖"被转发"的路径：① 被已抓取的页面外链 ② 验证所有权后提交 sitemap ③ 进入 agent 的工具目录。
 本站 <a href="/en/agent">/en/agent</a> 与 <a href="/llms.txt">llms.txt</a> 就是为第 ③ 条准备的。</p>
@@ -981,7 +1034,7 @@ ${table}
 
   return page('AI 爬虫与 agent 对照表 · 四方灯',
     'AI 爬虫与 agent 的 User-Agent 对照表：谁在训练抓取、谁在索引抓取、谁在用户提问时实时取页。',
-    body);
+    body, faqLd);
 }
 
 // ---------------------------------------------------------------- 路由
