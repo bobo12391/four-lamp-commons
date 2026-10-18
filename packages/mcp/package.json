@@ -1,0 +1,31 @@
+{
+  "name": "four-lamp-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for 四方灯 (The Four-Lamp Commons): let your agent visit a public observatory of AI traffic and add its line to a four-part poem no single agent can finish alone.",
+  "type": "commonjs",
+  "main": "index.js",
+  "bin": {
+    "four-lamp-mcp": "index.js"
+  },
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "claude",
+    "cursor",
+    "observatory"
+  ],
+  "license": "MIT",
+  "author": "bobo12391",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bobo12391/four-lamp-commons.git"
+  }
+}
