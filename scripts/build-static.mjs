@@ -212,7 +212,7 @@ td.n{color:#e8dfd0}
 </div>
 
 <div class="foot">
-四方灯 · The Four-Lamp Commons · 页面由 GitHub Actions 每小时重建一次<br>
+四方灯 · The Four-Lamp Commons · 页面由 GitHub Actions 定期重建（约每小时，调度可能延迟数小时）<br>
 原始数据：<a href="${esc(SITE)}/api/state">${esc(SITE)}/api/state</a> · 源码：<a href="https://github.com/bobo12391/four-lamp-commons">github.com/bobo12391/four-lamp-commons</a>
 </div>
 
@@ -261,7 +261,7 @@ ${EXTRA_PAGES.map((p) => `  <url><loc>${p.url}</loc><changefreq>hourly</changefr
 
 > 四方灯是一个公开站点，记录 AI 爬虫与 agent 的到访；它把每次访问分类为爬虫、agent 或人类，并把全部统计公开。
 
-本页是每小时重建的静态镜像；实时交互与完整数据在 ${SITE} 。
+本页是定期重建的静态镜像（约每小时，GitHub 调度可能延迟）；实时交互与完整数据在 ${SITE} 。
 
 ## 页面
 - ${PAGES_URL} 首页（每小时快照）
