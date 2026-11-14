@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bobo12391.github.io/four-lamp-commons/sitemap.xml
